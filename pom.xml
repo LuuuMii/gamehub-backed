@@ -33,10 +33,15 @@
 		</dependency>
 
 		<!-- 阿里云oss依赖 -->
+<!--		<dependency>-->
+<!--			<groupId>com.aliyun.oss</groupId>-->
+<!--			<artifactId>aliyun-sdk-oss</artifactId>-->
+<!--			<version>3.1.0</version>-->
+<!--		</dependency>-->
 		<dependency>
 			<groupId>com.aliyun.oss</groupId>
 			<artifactId>aliyun-sdk-oss</artifactId>
-			<version>3.1.0</version>
+			<version>3.17.4</version>
 		</dependency>
 		<!-- 日期工具栏依赖 -->
 		<dependency>
@@ -145,6 +150,14 @@
 			<artifactId>spring-boot-starter-websocket</artifactId>
 		</dependency>
 
+<!--		加密-->
+		<dependency>
+			<groupId>org.mindrot</groupId>
+			<artifactId>jbcrypt</artifactId>
+			<version>0.4</version>
+		</dependency>
+
+
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
@@ -156,6 +169,11 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+
+
+
+
+
 	</dependencies>
 
 	<build>

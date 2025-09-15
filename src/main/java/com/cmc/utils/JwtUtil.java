@@ -1,8 +1,9 @@
-package com.cmc.utlis;
+package com.cmc.utils;
 
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import org.springframework.beans.factory.annotation.Value;
 
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
@@ -10,9 +11,11 @@ import java.security.Key;
 import java.util.Date;
 
 public class JwtUtil {
-    // 自定义密钥字符串（Base64）
-    private static final String SECRET = "XiaoHeMiao";
-    private static final long EXPIRATION = 1000 * 60 * 60; // 1小时
+
+    @Value("${jwt.secret}")
+    private static String SECRET;
+    @Value("${jwt.expiration}")
+    private static long EXPIRATION;
 
     // 签名算法
     private static final SignatureAlgorithm SIGNATURE_ALGORITHM = SignatureAlgorithm.HS256;

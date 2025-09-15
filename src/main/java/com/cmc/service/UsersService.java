@@ -1,5 +1,6 @@
 package com.cmc.service;
 
+import com.cmc.common.R;
 import com.cmc.entity.Users;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -13,4 +14,5 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface UsersService extends IService<Users> {
 
+    R loginByAccount(Users user);
 }

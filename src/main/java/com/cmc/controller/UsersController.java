@@ -1,13 +1,14 @@
 package com.cmc.controller;
 
 
+import com.cmc.common.R;
+import com.cmc.entity.Users;
+import com.cmc.service.UsersService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * <p>
@@ -27,10 +28,18 @@ public class UsersController {
     @Value("${aliyun.oss.file.keysecret}")
     public String keyValue;
 
+    @Autowired
+    private UsersService usersService;
+
     @GetMapping("/test")
     @ApiOperation(value = "测试" ,notes = "测试1123")
     public String test(){
         return key + "+" +keyValue;
+    }
+
+    @PostMapping("/login")
+    public R loginByAccount(@RequestBody Users user){
+        return usersService.loginByAccount(user);
     }
 
 }
