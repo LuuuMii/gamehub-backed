@@ -14,5 +14,11 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface UsersService extends IService<Users> {
 
-    R loginByAccount(Users user);
+    R loginByUsername(Users user);
+
+    R register(Users users);
+
+    R getUserInfoById(Integer id);
+
+    R getUserInfoByToken(String token);
 }

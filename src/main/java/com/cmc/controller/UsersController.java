@@ -23,23 +23,27 @@ import org.springframework.web.bind.annotation.*;
 @Api(tags = "用户管理接口")
 public class UsersController {
 
-    @Value("${aliyun.oss.file.keyid}")
-    public String key;
-    @Value("${aliyun.oss.file.keysecret}")
-    public String keyValue;
-
     @Autowired
     private UsersService usersService;
 
-    @GetMapping("/test")
-    @ApiOperation(value = "测试" ,notes = "测试1123")
-    public String test(){
-        return key + "+" +keyValue;
+    @PostMapping("/loginByUsername")
+    public R loginByUsername(@RequestBody Users user){
+        return usersService.loginByUsername(user);
     }
 
-    @PostMapping("/login")
-    public R loginByAccount(@RequestBody Users user){
-        return usersService.loginByAccount(user);
+    @PostMapping("/register")
+    public R register(@RequestBody Users users){
+        return usersService.register(users);
+    }
+
+    @GetMapping("/getUserInfoById/{id}")
+    public R getUserInfoById(@PathVariable String id){
+        return usersService.getUserInfoById(Integer.valueOf(id));
+    }
+
+    @GetMapping("/getUserInfoByToken")
+    public R getUserInfoByToken(@RequestParam("token") String token){
+        return usersService.getUserInfoByToken(token);
     }
 
 }

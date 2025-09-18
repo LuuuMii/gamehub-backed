@@ -10,6 +10,12 @@ public class PasswordUtil {
         return BCrypt.hashpw(plainPassword, BCrypt.gensalt(12)); // 12 是工作因子
     }
 
+    /**
+     *
+     * @param plainPassword 前端输入的明文密码
+     * @param hashedPassword 数据库里存储的 hash
+     * @return
+     */
     public static boolean checkPassword(String plainPassword, String hashedPassword) {
         // 校验密码是否匹配
         return BCrypt.checkpw(plainPassword, hashedPassword);

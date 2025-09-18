@@ -4,29 +4,31 @@ package com.cmc.utils;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
 import java.security.Key;
 import java.util.Date;
 
+@Component
 public class JwtUtil {
 
     @Value("${jwt.secret}")
-    private static String SECRET;
+    private String SECRET;
     @Value("${jwt.expiration}")
-    private static long EXPIRATION;
+    private long EXPIRATION;
 
     // 签名算法
-    private static final SignatureAlgorithm SIGNATURE_ALGORITHM = SignatureAlgorithm.HS256;
+    private final SignatureAlgorithm SIGNATURE_ALGORITHM = SignatureAlgorithm.HS256;
 
-    private static Key getKey() {
+    private Key getKey() {
         byte[] apiKeySecretBytes = DatatypeConverter.parseBase64Binary(SECRET);
         return new SecretKeySpec(apiKeySecretBytes, SIGNATURE_ALGORITHM.getJcaName());
     }
 
     // 生成 token
-    public static String generateToken(String username) {
+    public String generateToken(String username) {
         return Jwts.builder()
                 .setSubject(username)
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
@@ -35,7 +37,7 @@ public class JwtUtil {
     }
 
     // 解析 token
-    public static String getUsername(String token) {
+    public String getUsername(String token) {
         try {
             return Jwts.parser()
                     .setSigningKey(getKey())
