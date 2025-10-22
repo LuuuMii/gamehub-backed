@@ -12,6 +12,12 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
     public void insertFill(MetaObject metaObject) {
         this.setFieldValByName("createTime",new Date(),metaObject);
         this.setFieldValByName("updateTime",new Date(),metaObject);
+
+        Object status = getFieldValByName("status",metaObject);
+        if(status == null){
+            this.setFieldValByName("status","0",metaObject);
+        }
+
     }
 
     @Override

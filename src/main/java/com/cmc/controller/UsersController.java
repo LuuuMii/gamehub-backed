@@ -38,12 +38,22 @@ public class UsersController {
 
     @GetMapping("/getUserInfoById/{id}")
     public R getUserInfoById(@PathVariable String id){
-        return usersService.getUserInfoById(Integer.valueOf(id));
+        return usersService.getUserInfoById(Long.valueOf(id));
+    }
+
+    @GetMapping("/getUserInfoByUsername/{username}")
+    public R getUserInfoByUsername(@PathVariable String username){
+        return usersService.getUserInfoByUsername(username);
     }
 
     @GetMapping("/getUserInfoByToken")
     public R getUserInfoByToken(@RequestParam("token") String token){
         return usersService.getUserInfoByToken(token);
+    }
+
+    @GetMapping("/getAuthorDataForArticlePage/{username}")
+    public R getAuthorDataForArticlePage(@PathVariable String username){
+        return usersService.getAuthorDataForArticlePage(username);
     }
 
 }

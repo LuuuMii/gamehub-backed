@@ -18,7 +18,11 @@ public interface UsersService extends IService<Users> {
 
     R register(Users users);
 
-    R getUserInfoById(Integer id);
+    R getUserInfoById(Long id);
 
     R getUserInfoByToken(String token);
+
+    R getUserInfoByUsername(String username);
+
+    R getAuthorDataForArticlePage(String username);
 }

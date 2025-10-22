@@ -45,7 +45,7 @@ request:
 
 jwt:
   secret: XiaoHeMiaoYa
-  expiration: 1800000
+  expiration: 604800000
 
 # 阿里云 OSS 配置
 aliyun:
@@ -59,3 +59,14 @@ aliyun:
 
 token:
   prefix: token
+
+rocketmq:
+  name-server: 127.0.0.1:9876
+  producer:
+    group: my-producer-group
+  consumer:
+    group: my-producer-group
+
+myBlog:
+  column:
+    defaultCoverImg: https://cmc-blog.oss-cn-hangzhou.aliyuncs.com/articleImg/25dd157c-c944-47b8-b2db-ac58e04d95f8_xiaohemiao.jpg

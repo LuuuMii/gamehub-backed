@@ -15,12 +15,17 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.PostConstruct;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -194,9 +199,9 @@ public class OssUtil {
         }
         return R.ok("删除成功");
     }
-    // url       https%3A%2F%2Fmiaobi-lite.bj.bcebos.com%2Fmiaobi%2F5mao%2Fb%27MzU5M3gyMDAw55qE5Zu%2B54mHXzE3MzQyNzg0ODIuNDI4NzE0NV8xNzM0Mjc4NDgzLjMyMjE1MTQ%3D%27%2F1.png=
-    // decodeUrl https://miaobi-lite.bj.bcebos.com/miaobi/5mao/b'MzU5M3gyMDAw55qE5Zu+54mHXzE3MzQyNzg0ODIuNDI4NzE0NV8xNzM0Mjc4NDgzLjMyMjE1MTQ='/1.png=
+
     public MultipartFile urlToMultipartFile(String url) throws Exception {
+        //ignoreSsl();
         String decodedUrl = URLDecoder.decode(url, "utf-8");
         File tempFile = null;
         try {
@@ -231,6 +236,20 @@ public class OssUtil {
                 tempFile.delete();
             }
         }
+    }
+    private void ignoreSsl() throws Exception {
+        TrustManager[] trustAllCerts = new TrustManager[]{
+                new X509TrustManager() {
+                    public X509Certificate[] getAcceptedIssuers() { return null; }
+                    public void checkClientTrusted(X509Certificate[] certs, String authType) {}
+                    public void checkServerTrusted(X509Certificate[] certs, String authType) {}
+                }
+        };
+
+        SSLContext sc = SSLContext.getInstance("SSL");
+        sc.init(null, trustAllCerts, new java.security.SecureRandom());
+        HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+        HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
     }
 
 }

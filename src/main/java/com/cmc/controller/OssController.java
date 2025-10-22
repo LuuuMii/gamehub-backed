@@ -65,8 +65,6 @@ public class OssController {
         }
     }
 
-    // https://miaobi-lite.bj.bcebos.com/miaobi/5mao/b'  MzU5M3gyMDAw55qE5Zu+  54mHXzE3MzQyNzg0ODIuNDI4NzE0NV8xNzM0Mjc4NDgzLjMyMjE1MTQ=  '/  1.png=
-    // https://miaobi-lite.bj.bcebos.com/miaobi/5mao/b%27MzU5M3gyMDAw55qE5Zu%2B54mHXzE3MzQyNzg0ODIuNDI4NzE0NV8xNzM0Mjc4NDgzLjMyMjE1MTQ%3D%27/1.png
     @PostMapping("/uploadImgByUrl")
     public R uploadImgByUrl(@RequestBody ImageDTO imageDTO){
         MultipartFile file = null;

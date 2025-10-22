@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 public class LoginVO {
 
     private String token;
-    private Integer uid;
+    private Long uid;
 
 
 }
