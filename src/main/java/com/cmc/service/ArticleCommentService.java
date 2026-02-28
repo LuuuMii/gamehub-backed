@@ -17,4 +17,6 @@ public interface ArticleCommentService extends IService<ArticleComment> {
     R getArticleCommentByArticleId(Long articleId);
 
     R addArticleComment(ArticleComment articleComment);
+
+    R getArticleComment(Long articleId, Long userId);
 }

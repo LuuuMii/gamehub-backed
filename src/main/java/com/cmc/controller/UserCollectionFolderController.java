@@ -1,6 +1,7 @@
 package com.cmc.controller;
 
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.cmc.common.R;
 import com.cmc.entity.UserCollectionFolder;
 import com.cmc.service.UserCollectionFolderService;
@@ -28,6 +29,7 @@ public class UserCollectionFolderController {
     }
 
     @GetMapping("/getUserCollectionFoldersByUserIdForTarget/{userId}")
+    @SaCheckLogin
     public R getUserCollectionFoldersByUserIdForTarget(
             @PathVariable String userId,
             @RequestParam("targetId") String targetId,

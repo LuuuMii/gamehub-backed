@@ -3,6 +3,9 @@ package com.cmc.service;
 import com.cmc.common.R;
 import com.cmc.entity.Users;
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.springframework.http.HttpRequest;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * <p>
@@ -25,4 +28,6 @@ public interface UsersService extends IService<Users> {
     R getUserInfoByUsername(String username);
 
     R getAuthorDataForArticlePage(String username);
+
+    R logout(HttpServletRequest request);
 }

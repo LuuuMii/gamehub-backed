@@ -1,6 +1,7 @@
 package com.cmc.controller;
 
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.cmc.common.R;
 import com.cmc.entity.Users;
 import com.cmc.service.UsersService;
@@ -8,7 +9,10 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpRequest;
 import org.springframework.web.bind.annotation.*;
+
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * <p>
@@ -36,6 +40,11 @@ public class UsersController {
         return usersService.register(users);
     }
 
+    @PostMapping("/logout")
+    public R logout(HttpServletRequest request){
+        return usersService.logout(request);
+    }
+
     @GetMapping("/getUserInfoById/{id}")
     public R getUserInfoById(@PathVariable String id){
         return usersService.getUserInfoById(Long.valueOf(id));
@@ -54,6 +63,12 @@ public class UsersController {
     @GetMapping("/getAuthorDataForArticlePage/{username}")
     public R getAuthorDataForArticlePage(@PathVariable String username){
         return usersService.getAuthorDataForArticlePage(username);
+    }
+
+    @SaCheckLogin
+    @GetMapping("/testTa")
+    public String testTa(){
+        return "CHAXUN";
     }
 
 }

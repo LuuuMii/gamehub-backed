@@ -32,5 +32,11 @@ public class ArticleCommentController {
         return articleCommentService.addArticleComment(articleComment);
     }
 
+    @GetMapping("/getArticleComment/{articleId}/{userId}")
+    public R getArticleComment(@PathVariable String articleId,
+                               @PathVariable String userId){
+        return articleCommentService.getArticleComment(Long.valueOf(articleId),Long.valueOf(userId));
+    }
+
 }
 

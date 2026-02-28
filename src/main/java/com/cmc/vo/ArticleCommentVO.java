@@ -48,6 +48,8 @@ public class ArticleCommentVO {
 
     private String replyUsername;
 
+    private String isLike;
+
     private List<ArticleCommentVO> childrenList;
 
 }

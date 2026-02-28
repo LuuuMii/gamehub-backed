@@ -3,8 +3,11 @@ package com.cmc.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.cmc.common.R;
 import com.cmc.entity.ArticleComment;
+import com.cmc.entity.UserLikeRecord;
 import com.cmc.entity.Users;
+import com.cmc.enums.type.LikeTypeEnum;
 import com.cmc.mapper.ArticleCommentMapper;
+import com.cmc.mapper.UserLikeRecordMapper;
 import com.cmc.mapper.UsersMapper;
 import com.cmc.service.ArticleCommentService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -15,10 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -31,13 +31,15 @@ import java.util.stream.Stream;
  * @since 2025-10-22
  */
 @Service
-@Transactional
+@Transactional(rollbackFor = Exception.class)
 public class ArticleCommentServiceImpl extends ServiceImpl<ArticleCommentMapper, ArticleComment> implements ArticleCommentService {
 
     @Autowired
     private ArticleCommentMapper articleCommentMapper;
     @Autowired
     private UsersMapper usersMapper;
+    @Autowired
+    private UserLikeRecordMapper userLikeRecordMapper;
 
     @Override
     public R getArticleCommentByArticleId(Long articleId) {
@@ -99,6 +101,7 @@ public class ArticleCommentServiceImpl extends ServiceImpl<ArticleCommentMapper,
 
                     childVOList.add(vo);
                 }
+                childVOList.sort(Comparator.comparing(ArticleCommentVO::getCreateTime));
                 parentVO.setChildrenList(childVOList);
             }
 
@@ -119,5 +122,23 @@ public class ArticleCommentServiceImpl extends ServiceImpl<ArticleCommentMapper,
         }
 
         return R.error("fail");
+    }
+
+    @Override
+    public R getArticleComment(Long articleId, Long userId) {
+        R result = getArticleCommentByArticleId(articleId);
+        List<ArticleCommentVO> commentVOList = (List<ArticleCommentVO>) result.getData();
+        // 获取当前用户 关于这个 评论的所有点赞信息
+        List<UserLikeRecord> userLikeRecords = userLikeRecordMapper.selectList(new QueryWrapper<UserLikeRecord>()
+                .eq("user_id", userId)
+                .eq("target_id", articleId)
+                .eq("target_type", LikeTypeEnum.ARTICLE_COMMENT.getCode())
+                .eq("is_deleted", "0")
+                .eq("status", "0"));
+        // 获取到的数据 对 评论是否点赞进行判断
+        for (ArticleCommentVO articleCommentVO : commentVOList) {
+
+        }
+        return null;
     }
 }

@@ -3,8 +3,10 @@ package com.cmc.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.cmc.common.R;
 import com.cmc.entity.Article;
+import com.cmc.entity.ArticleComment;
 import com.cmc.entity.UserLikeRecord;
 import com.cmc.enums.type.LikeTypeEnum;
+import com.cmc.mapper.ArticleCommentMapper;
 import com.cmc.mapper.ArticleMapper;
 import com.cmc.mapper.UserLikeRecordMapper;
 import com.cmc.service.UserLikeRecordService;
@@ -29,6 +31,8 @@ public class UserLikeRecordServiceImpl extends ServiceImpl<UserLikeRecordMapper,
     private UserLikeRecordMapper userLikeRecordMapper;
     @Autowired
     private ArticleMapper articleMapper;
+    @Autowired
+    private ArticleCommentMapper articleCommentMapper;
 
     @Override
     public R syncLikeRecord(UserLikeRecord userLikeRecord, Long userId, Long targetId, String targetType) {
@@ -72,6 +76,20 @@ public class UserLikeRecordServiceImpl extends ServiceImpl<UserLikeRecordMapper,
                     break;
                 case VIDEO:
                     System.out.println("处理视频点赞");
+                    break;
+                case ARTICLE_COMMENT:
+                    ArticleComment articleComment = articleCommentMapper.selectOne(new QueryWrapper<ArticleComment>()
+                            .eq("id", targetId));
+                    if (articleComment != null) {
+                        // 计算当前 评论的点赞数 并且赋值给comment
+                        Integer count = userLikeRecordMapper.selectCount(new QueryWrapper<UserLikeRecord>()
+                                .eq("target_id", targetId)
+                                .eq("target_type", targetType)
+                                .eq("is_deleted", "0"));
+                        articleComment.setLikeCount(count);
+                        articleCommentMapper.updateById(articleComment);
+                    }
+                    System.out.println("处理这篇文章评论的点赞");
                     break;
                 default:
                     break;

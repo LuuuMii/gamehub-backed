@@ -1,5 +1,6 @@
 package com.cmc.service.impl;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.cmc.common.R;
 import com.cmc.constans.article.article.ArticleStatusConstant;
@@ -16,10 +17,12 @@ import com.cmc.vo.UsersVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -70,6 +73,8 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users> implements
         if (userInfo != null && PasswordUtil.checkPassword(user.getPassword(), userInfo.getPassword())) {
             //生成token
             String token = jwtUtil.generateToken(user.getUsername());
+            // 根据username 获取 用户id存入 sa-token
+            StpUtil.login(userInfo.getId());
             //将token 存储在redis
             if(!ObjectUtils.isEmpty(token)){
                 redisUtil.set(tokenPrefix + ":" + user.getUsername(), token, 7 , TimeUnit.DAYS);
@@ -176,5 +181,22 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users> implements
                 .eq("is_deleted","0")).size());
 
         return R.ok(vo);
+    }
+
+    // 用户注销
+    @Override
+    public R logout(HttpServletRequest request) {
+        String token = request.getHeader("Authorization");
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+            String username = jwtUtil.getUsername(token);
+            if(redisUtil.delete("token:" + username)){
+                // 清除 sa-token
+                Users userinfo = usersMapper.selectOne(new QueryWrapper<Users>().eq("username", username));
+                StpUtil.logout(userinfo.getId());
+                return R.ok("logout success");
+            }
+        }
+        return R.error("logout failed");
     }
 }

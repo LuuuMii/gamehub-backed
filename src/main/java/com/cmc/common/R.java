@@ -1,5 +1,7 @@
 package com.cmc.common;
 
+import com.cmc.enums.ResultCodeEnum;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -60,6 +62,10 @@ public class R<T> implements Serializable {
     // 失败返回，自定义状态码、消息和数据
     public static <T> R error(int code, String message, T data) {
         return new R<>(code, message, data);
+    }
+
+    public static R error(ResultCodeEnum e){
+        return new R(e.getCode(),e.getMsg(),null);
     }
 
     // get / set 方法
