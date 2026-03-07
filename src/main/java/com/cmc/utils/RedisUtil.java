@@ -46,6 +46,18 @@ public class RedisUtil {
     public boolean hasKey(String key) {
         return redisTemplate.hasKey(key);
     }
+    /**
+     * 如果 key 不存在则设置值 (SETNX)
+     *
+     * @param key 键
+     * @param value 值
+     * @param timeout 过期时间
+     * @param unit 时间单位
+     * @return true 设置成功 false key已存在
+     */
+    public Boolean setIfAbsent(String key, Object value, Long timeout, TimeUnit unit) {
+        return redisTemplate.opsForValue().setIfAbsent(key, value, timeout, unit);
+    }
 
     /**
      * 设置过期时间

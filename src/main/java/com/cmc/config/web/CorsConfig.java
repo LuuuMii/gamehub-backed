@@ -13,10 +13,11 @@ public class CorsConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOriginPatterns("*") // 允许所有域名，也可指定 http://localhost:8080
+                        // 指定前端地址，避免使用通配符 "*"
+                        .allowedOrigins("http://localhost:8080") // 允许前端域名
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
-                        .allowCredentials(true);
+                        .allowCredentials(true); // 允许携带cookie
             }
         };
     }

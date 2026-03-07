@@ -14,6 +14,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(NotLoginException.class)
     public R handlerNotLoginException(NotLoginException e){
+        log.error("NotLoginException",e);
         return R.error(ResultCodeEnum.NOT_LOGIN);
     }
 

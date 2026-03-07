@@ -29,7 +29,6 @@ public class UserCollectionFolderController {
     }
 
     @GetMapping("/getUserCollectionFoldersByUserIdForTarget/{userId}")
-    @SaCheckLogin
     public R getUserCollectionFoldersByUserIdForTarget(
             @PathVariable String userId,
             @RequestParam("targetId") String targetId,
@@ -37,7 +36,7 @@ public class UserCollectionFolderController {
         return userCollectionFolderService.getUserCollectionFoldersByUserIdForTarget(Long.valueOf(userId),Long.valueOf(targetId),targetType);
     }
 
-        @PostMapping("/addUserCollectionFolder")
+    @PostMapping("/addUserCollectionFolder")
     public R addUserCollectionFolder(@RequestBody UserCollectionFolder userCollectionFolder){
         return userCollectionFolderService.addUserCollectionFolder(userCollectionFolder);
     }

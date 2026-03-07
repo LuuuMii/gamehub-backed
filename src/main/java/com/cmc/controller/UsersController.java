@@ -2,6 +2,7 @@ package com.cmc.controller;
 
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.annotation.SaCheckRole;
 import com.cmc.common.R;
 import com.cmc.entity.Users;
 import com.cmc.service.UsersService;
@@ -65,7 +66,6 @@ public class UsersController {
         return usersService.getAuthorDataForArticlePage(username);
     }
 
-    @SaCheckLogin
     @GetMapping("/testTa")
     public String testTa(){
         return "CHAXUN";

@@ -1,5 +1,6 @@
 package com.cmc.service.impl;
 
+import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.cmc.common.R;
@@ -65,28 +66,52 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users> implements
      * @param user
      * @return
      */
+
     @Override
     public R loginByUsername(Users user) {
-        QueryWrapper<Users> usersQueryWrapper = new QueryWrapper<>();
-        usersQueryWrapper.eq("username", user.getUsername());
-        Users userInfo = usersMapper.selectOne(usersQueryWrapper);
-        if (userInfo != null && PasswordUtil.checkPassword(user.getPassword(), userInfo.getPassword())) {
-            //生成token
-            String token = jwtUtil.generateToken(user.getUsername());
-            // 根据username 获取 用户id存入 sa-token
-            StpUtil.login(userInfo.getId());
-            //将token 存储在redis
-            if(!ObjectUtils.isEmpty(token)){
-                redisUtil.set(tokenPrefix + ":" + user.getUsername(), token, 7 , TimeUnit.DAYS);
-                return R.ok("登录成功",new LoginVO(token,userInfo.getId()));
-            }
-        }else if (userInfo == null){
+
+        Users userInfo = usersMapper.selectOne(
+                new QueryWrapper<Users>().eq("username", user.getUsername())
+        );
+
+        if(userInfo == null){
             return R.error("账号错误");
-        }else if (!PasswordUtil.checkPassword(user.getPassword(), userInfo.getPassword())){
+        }
+
+        if(!PasswordUtil.checkPassword(user.getPassword(), userInfo.getPassword())){
             return R.error("密码错误");
         }
-        return R.error("登录失败");
+
+        // 登录
+        StpUtil.login(userInfo.getId());
+
+        // 获取 token
+        String token = StpUtil.getTokenValue();
+
+        return R.ok("登录成功", new LoginVO(token,userInfo.getId()));
     }
+//    @Override
+//    public R loginByUsername(Users user) {
+//        QueryWrapper<Users> usersQueryWrapper = new QueryWrapper<>();
+//        usersQueryWrapper.eq("username", user.getUsername());
+//        Users userInfo = usersMapper.selectOne(usersQueryWrapper);
+//        if (userInfo != null && PasswordUtil.checkPassword(user.getPassword(), userInfo.getPassword())) {
+//            //生成token
+//            String token = jwtUtil.generateToken(user.getUsername());
+//            // 根据username 获取 用户id存入 sa-token
+//            StpUtil.login(userInfo.getId());
+//            //将token 存储在redis
+//            if(!ObjectUtils.isEmpty(token)){
+//                redisUtil.set(tokenPrefix + ":" + user.getUsername(), token, 7 , TimeUnit.DAYS);
+//                return R.ok("登录成功",new LoginVO(token,userInfo.getId()));
+//            }
+//        }else if (userInfo == null){
+//            return R.error("账号错误");
+//        }else if (!PasswordUtil.checkPassword(user.getPassword(), userInfo.getPassword())){
+//            return R.error("密码错误");
+//        }
+//        return R.error("登录失败");
+//    }
 
     @Override
     public R register(Users users) {
@@ -122,16 +147,17 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users> implements
     @Override
     public R getUserInfoByToken(String token) {
         QueryWrapper<Users> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("username", jwtUtil.getUsername(token));
+
+//        queryWrapper.eq("username", jwtUtil.getUsername(token));
+        queryWrapper.eq("id", StpUtil.getLoginIdByToken(token));
         Users users = usersMapper.selectOne(queryWrapper);
         //判断redis中有没有
-        if (!ObjectUtils.isEmpty(token) && token.equals(redisUtil.get(tokenPrefix + ":" + jwtUtil.getUsername(token)))){
-            if (!ObjectUtils.isEmpty(users)) {
-                UsersVO usersVO = new UsersVO();
-                BeanUtils.copyProperties(users, usersVO);
-                return R.ok(usersVO);
-            }
+        if (!ObjectUtils.isEmpty(users)) {
+            UsersVO usersVO = new UsersVO();
+            BeanUtils.copyProperties(users, usersVO);
+            return R.ok(usersVO);
         }
+
 
         return R.error("查询失败");
     }
@@ -189,13 +215,11 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users> implements
         String token = request.getHeader("Authorization");
         if (token != null && token.startsWith("Bearer ")) {
             token = token.substring(7);
-            String username = jwtUtil.getUsername(token);
-            if(redisUtil.delete("token:" + username)){
-                // 清除 sa-token
-                Users userinfo = usersMapper.selectOne(new QueryWrapper<Users>().eq("username", username));
-                StpUtil.logout(userinfo.getId());
-                return R.ok("logout success");
-            }
+            Object loginId = StpUtil.getLoginIdByToken(token);
+            // 清除 sa-token
+            Users userinfo = usersMapper.selectOne(new QueryWrapper<Users>().eq("id", loginId));
+            StpUtil.logout(userinfo.getId());
+            return R.ok("logout success");
         }
         return R.error("logout failed");
     }
