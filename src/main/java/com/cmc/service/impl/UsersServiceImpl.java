@@ -2,9 +2,12 @@ package com.cmc.service.impl;
 
 import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.bean.copier.CopyOptions;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.cmc.common.R;
 import com.cmc.constans.article.article.ArticleStatusConstant;
+import com.cmc.dto.UserDTO;
 import com.cmc.entity.*;
 import com.cmc.mapper.*;
 import com.cmc.service.UsersService;
@@ -24,7 +27,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -87,6 +92,14 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users> implements
 
         // 获取 token
         String token = StpUtil.getTokenValue();
+
+        // 存储用户值到redis中
+        UserDTO userDTO = new UserDTO();
+        BeanUtil.copyProperties(userInfo,userDTO);
+        Map<String, Object> userMap = BeanUtil.beanToMap(userDTO);
+        String userInfoKey = "login:token:" + token;
+        redisUtil.setHash(userInfoKey,userMap);
+        redisUtil.expire(userInfoKey,30,TimeUnit.MINUTES);
 
         return R.ok("登录成功", new LoginVO(token,userInfo.getId()));
     }

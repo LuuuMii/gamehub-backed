@@ -148,6 +148,13 @@
 			<version>0.0.9</version>
 		</dependency>
 
+<!--		hu tool-->
+		<dependency>
+			<groupId>cn.hutool</groupId>
+			<artifactId>hutool-all</artifactId>
+			<version>5.8.38</version>
+		</dependency>
+
 		<!--        阿里云短信-->
 		<dependency>
 			<groupId>com.aliyun</groupId>

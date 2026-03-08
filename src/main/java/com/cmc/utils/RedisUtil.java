@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Component
@@ -108,6 +109,13 @@ public class RedisUtil {
      */
     public void hashDelete(String key, String hashKey) {
         redisTemplate.opsForHash().delete(key, hashKey);
+    }
+
+    public Map<Object, Object> getHash(String key) {
+        return redisTemplate.opsForHash().entries(key);
+    }
+    public void setHash(String key, Map<String, Object> map) {
+        redisTemplate.opsForHash().putAll(key, map);
     }
 
 }
