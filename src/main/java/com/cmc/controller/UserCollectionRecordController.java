@@ -32,5 +32,14 @@ public class UserCollectionRecordController {
         return userCollectionRecordService.syncCollectionRecords(Long.valueOf(userId),Long.valueOf(targetId),targetType,records);
     }
 
+    @PostMapping("/insertCollectRecord")
+    public R insertCollectRecord(@RequestBody List<UserCollectionRecord> records,
+                                 @RequestParam("userId") String userId,
+                                 @RequestParam("targetId") String targetId,
+                                 @RequestParam("targetType") String targetType) {
+        return userCollectionRecordService.insertCollectRecord(Long.valueOf(userId),Long.valueOf(targetId),targetType,records);
+    }
+
+
 }
 

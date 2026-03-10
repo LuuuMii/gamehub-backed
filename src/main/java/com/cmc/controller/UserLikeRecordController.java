@@ -1,6 +1,7 @@
 package com.cmc.controller;
 
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.cmc.common.R;
 import com.cmc.entity.UserLikeRecord;
 import com.cmc.service.UserLikeRecordService;
@@ -30,11 +31,25 @@ public class UserLikeRecordController {
         return userLikeRecordService.syncLikeRecord(userLikeRecord,Long.valueOf(userId),Long.valueOf(targetId),targetType);
     }
 
+    @PostMapping("/insertUserLikeRecord")
+    @SaCheckLogin
+    public R insertUserLikeRecord(@RequestBody UserLikeRecord userLikeRecord,
+                                  @RequestParam("userId") String userId,
+                                  @RequestParam("targetId") String targetId,
+                                  @RequestParam("targetType") String targetType){
+        return userLikeRecordService.insertUserLikeRecord(userLikeRecord,Long.valueOf(userId),Long.valueOf(targetId),targetType);
+    }
+
     @GetMapping("/getUserLikeRecord/{userId}/{targetId}/{targetType}")
     public R getUserLikeRecord(@PathVariable("userId") String userId,
                                @PathVariable("targetId") String targetId,
                                @PathVariable("targetType")String targetType){
         return userLikeRecordService.getUserLikeRecord(Long.valueOf(userId),Long.valueOf(targetId),targetType);
+    }
+
+    @GetMapping("/testMQ")
+    public R testMQ(){
+        return userLikeRecordService.testMQ();
     }
 
 }

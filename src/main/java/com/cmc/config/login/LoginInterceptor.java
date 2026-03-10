@@ -40,14 +40,12 @@ public class LoginInterceptor implements HandlerInterceptor {
 
         UserContext.setUser(userDTO);
 
-        System.out.println("UserContext:"+userDTO);
 
         return true;
     }
 
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
-        System.out.println("UserContext Remove:");
         UserContext.remove();
     }
 }

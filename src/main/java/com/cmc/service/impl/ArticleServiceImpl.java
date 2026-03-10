@@ -80,6 +80,11 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         article.setStatus(ArticleStatusConstant.NORMAL);
         article.setPublishTime(new Date());
+        article.setViewCount(0)
+                .setLikeCount(0)
+                .setUnlikeCount(0)
+                .setCollectCount(0)
+                .setCommentCount(0);
 
         int i;
 

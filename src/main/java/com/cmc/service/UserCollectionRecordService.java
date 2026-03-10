@@ -17,4 +17,6 @@ import java.util.List;
 public interface UserCollectionRecordService extends IService<UserCollectionRecord> {
 
     R syncCollectionRecords(Long userId,Long targetId,String targetType, List<UserCollectionRecord> records);
+
+    R insertCollectRecord(Long userId,Long targetId,String targetType, List<UserCollectionRecord> records);
 }

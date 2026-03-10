@@ -9,9 +9,13 @@ import com.cmc.enums.type.LikeTypeEnum;
 import com.cmc.mapper.ArticleCommentMapper;
 import com.cmc.mapper.ArticleMapper;
 import com.cmc.mapper.UserLikeRecordMapper;
+import com.cmc.rocketmq.message.LikeMessage;
 import com.cmc.service.UserLikeRecordService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.apache.rocketmq.client.producer.SendResult;
+import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -33,6 +37,10 @@ public class UserLikeRecordServiceImpl extends ServiceImpl<UserLikeRecordMapper,
     private ArticleMapper articleMapper;
     @Autowired
     private ArticleCommentMapper articleCommentMapper;
+    @Autowired
+    private RocketMQTemplate rocketMQTemplate;
+    @Autowired
+    private RedisTemplate<String,Object> redisTemplate;
 
     @Override
     public R syncLikeRecord(UserLikeRecord userLikeRecord, Long userId, Long targetId, String targetType) {
@@ -100,6 +108,43 @@ public class UserLikeRecordServiceImpl extends ServiceImpl<UserLikeRecordMapper,
     }
 
     @Override
+    public R insertUserLikeRecord(UserLikeRecord userLikeRecord, Long userId, Long targetId, String targetType) {
+
+        String userKey = "article:like:users:" + targetId;
+        String countKey = "article:like:count:" + targetId;
+
+
+        Boolean liked = redisTemplate.opsForSet().isMember(userKey, userId);
+
+        if (Boolean.TRUE.equals(liked)) {
+            //去掉点赞
+            redisTemplate.opsForSet().remove(userKey,userId);
+            redisTemplate.opsForValue().decrement(countKey);
+
+            // 发送消息
+            rocketMQTemplate.convertAndSend(
+                    "article-like-topic",
+                    new LikeMessage(targetId,targetType,userId,"UNLIKE")
+            );
+
+            return R.ok("取消点赞");
+
+        }else{
+            //点赞
+            redisTemplate.opsForSet().add(userKey,userId);
+            redisTemplate.opsForValue().increment(countKey);
+
+            rocketMQTemplate.convertAndSend(
+                    "article-like-topic",
+                    new LikeMessage(targetId,targetType,userId,"LIKE")
+            );
+
+            return R.ok("点赞");
+        }
+
+    }
+
+    @Override
     public R getUserLikeRecord(Long userId, Long targetId, String targetType) {
         List<UserLikeRecord> userLikeRecords = userLikeRecordMapper.selectList(new QueryWrapper<UserLikeRecord>()
                 .eq("user_id", userId)
@@ -109,5 +154,16 @@ public class UserLikeRecordServiceImpl extends ServiceImpl<UserLikeRecordMapper,
             return R.ok("success",userLikeRecords.get(0));
         }
         return R.error("fail");
+    }
+
+
+
+    @Override
+    public R testMQ() {
+        SendResult sendResult = rocketMQTemplate.syncSend("test-topic", "我是一个同步消息");
+        System.out.println(sendResult.getSendStatus());
+        System.out.println(sendResult.getMsgId());
+        System.out.println(sendResult.getMessageQueue());
+        return null;
     }
 }

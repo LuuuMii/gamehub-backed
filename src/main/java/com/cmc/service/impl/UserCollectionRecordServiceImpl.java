@@ -4,15 +4,19 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.cmc.common.R;
 import com.cmc.entity.Article;
+import com.cmc.entity.ArticleUserBehavior;
 import com.cmc.entity.UserCollectionRecord;
+import com.cmc.enums.article.UserBehaviorType;
 import com.cmc.enums.type.CollectionTypeEnum;
 import com.cmc.mapper.ArticleMapper;
+import com.cmc.mapper.ArticleUserBehaviorMapper;
 import com.cmc.mapper.UserCollectionRecordMapper;
 import com.cmc.service.UserCollectionRecordService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.ObjectUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -33,6 +37,8 @@ public class UserCollectionRecordServiceImpl extends ServiceImpl<UserCollectionR
     private UserCollectionRecordMapper userCollectionRecordMapper;
     @Autowired
     private ArticleMapper articleMapper;
+    @Autowired
+    private ArticleUserBehaviorMapper articleUserBehaviorMapper;
 
 
     @Override
@@ -100,6 +106,7 @@ public class UserCollectionRecordServiceImpl extends ServiceImpl<UserCollectionR
 
         // 6.计算出该文章的收藏数 并且修改表中数据 collect_count
         int collectionCount = userCollectionRecordMapper.selectCountDistinctUser(targetId,targetType);
+
         // 根据枚举类型判断  然后使用对应的mapper
         CollectionTypeEnum typeEnum = CollectionTypeEnum.fromCode(targetType);
         if(typeEnum!=null){
@@ -112,6 +119,27 @@ public class UserCollectionRecordServiceImpl extends ServiceImpl<UserCollectionR
                         article.setCollectCount(collectionCount);
                         articleMapper.updateById(article);
                     }
+                    // 记录用户行为
+                    UserCollectionRecord record = userCollectionRecordMapper.selectOne(new QueryWrapper<UserCollectionRecord>()
+                            .eq("user_id", userId)
+                            .eq("target_id", targetId)
+                            .eq("target_type", targetType)
+                            .eq("status", "0")
+                            .eq("is_deleted", "0"));
+                    if (!ObjectUtils.isEmpty(record)){
+                        // 代表用户收藏了 记录用户行为
+                        ArticleUserBehavior behavior = new ArticleUserBehavior();
+                        behavior.setUserId(userId)
+                                .setArticleId(targetId)
+                                .setBehaviorType(UserBehaviorType.COLLECT_BEHAVIOR.getType())
+                                .setScore(UserBehaviorType.COLLECT_BEHAVIOR.getScore());
+                        articleUserBehaviorMapper.insert(behavior);
+                    }else{
+                        articleUserBehaviorMapper.delete(new QueryWrapper<ArticleUserBehavior>()
+                                .eq("user_id", userId)
+                                .eq("article_id", targetId)
+                                .eq("behavior_type", UserBehaviorType.COLLECT_BEHAVIOR.getType()));
+                    }
                     break;
                 case VIDEO:
                     System.out.println("关于video操作~");
@@ -121,5 +149,10 @@ public class UserCollectionRecordServiceImpl extends ServiceImpl<UserCollectionR
         }
 
         return R.ok("收藏同步成功");
+    }
+
+    @Override
+    public R insertCollectRecord(Long userId, Long targetId, String targetType, List<UserCollectionRecord> records) {
+        return null;
     }
 }

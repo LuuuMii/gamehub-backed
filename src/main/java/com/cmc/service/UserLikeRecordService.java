@@ -17,4 +17,8 @@ public interface UserLikeRecordService extends IService<UserLikeRecord> {
     R syncLikeRecord(UserLikeRecord userLikeRecord, Long userId, Long targetId, String targetType);
 
     R getUserLikeRecord(Long userId, Long targetId, String targetType);
+
+    R insertUserLikeRecord(UserLikeRecord userLikeRecord, Long aLong, Long aLong1, String targetType);
+
+    R testMQ();
 }
