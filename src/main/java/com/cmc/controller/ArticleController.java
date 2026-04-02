@@ -2,6 +2,7 @@ package com.cmc.controller;
 
 
 import com.cmc.common.R;
+import com.cmc.dto.query.ArticleQueryDto;
 import com.cmc.entity.Article;
 import com.cmc.service.ArticleService;
 import io.swagger.annotations.Api;
@@ -58,6 +59,31 @@ public class ArticleController {
     @GetMapping("/getArticlePageDetailsById/{id}")
     public R getArticlePageDetailsById(@PathVariable String id){
         return articleService.getArticlePageDetailsById(Long.valueOf(id));
+    }
+
+    @GetMapping("/getHotArticle")
+    public R getHotArticle(){
+        return articleService.getHotArticle();
+    }
+
+    /**
+     * 根据条件分页查询数据
+     * @param articleQueryDto
+     * @return
+     */
+    @PostMapping("/getArticleList")
+    public R getArticleList(@RequestBody ArticleQueryDto articleQueryDto){
+        return articleService.getArticleList(articleQueryDto);
+    }
+
+    /**
+     * 根据Category获取热门帖子
+     * @param articleQueryDto 查询条件
+     * @return 热门帖子
+     */
+    @PostMapping("/getHotArticleByCategory")
+    public R getHotArticleByCategory(@RequestBody ArticleQueryDto articleQueryDto){
+        return articleService.getHotArticleByCategory(articleQueryDto);
     }
 
     @GetMapping("/testRocketMQ/{msg}")

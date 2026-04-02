@@ -82,6 +82,9 @@ public class Article implements Serializable {
 
     private Integer commentCount;
 
+    @TableField(fill = FieldFill.INSERT)
+    private String isHot;
+
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     @TableField(fill = FieldFill.INSERT)
     private Date createTime;

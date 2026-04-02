@@ -1,19 +1,26 @@
 package com.cmc.service.impl;
 
+import cn.hutool.json.JSONUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.cmc.common.R;
 import com.cmc.constans.article.article.ArticleStatusConstant;
 import com.cmc.constans.users.column.UserColumnStatusConstant;
 import com.cmc.constans.users.column.UserColumnTypeConstant;
+import com.cmc.dto.query.ArticleQueryDto;
 import com.cmc.entity.*;
 import com.cmc.mapper.*;
 import com.cmc.service.ArticleService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.cmc.utils.RedisUtil;
+import com.cmc.utils.article.CategoryUtil;
 import com.cmc.vo.ArticlePageDetailsVO;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
+import org.apache.commons.lang.StringUtils;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +33,7 @@ import org.springframework.util.ObjectUtils;
 import java.lang.reflect.Type;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 
@@ -61,6 +69,12 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     @Autowired
     private ArticleColumnMapper articleColumnMapper;
+
+    @Autowired
+    private RedisUtil redisUtil;
+
+    @Autowired
+    private CategoryUtil categoryUtil;
 
     @Override
     public R addDraftArticle(Article article) {
@@ -268,4 +282,117 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         return null;
     }
+
+    /**
+     * 获取论坛主页的热门文章(轮播图)
+     * @return
+     */
+    @Override
+    public R getHotArticle() {
+
+        String hotArticleKey = "hotArticle";
+        // 1. 查缓存
+        Object cache = redisUtil.get(hotArticleKey);
+        if (cache != null) {
+            // JSON --> List
+            List<Article> list = JSONUtil.toList(cache.toString(), Article.class);
+            return R.ok(list);
+        }
+
+        // 2. 查数据库
+        QueryWrapper<Article> articleQueryWrapper = new QueryWrapper<>();
+        articleQueryWrapper.eq("status",ArticleStatusConstant.NORMAL)
+                .eq("is_hot","1")
+                .orderByDesc("create_time")
+                .last("limit 50");
+        List<Article> list = articleMapper.selectList(articleQueryWrapper);
+
+        List<Article> top5 = list.stream()
+                .sorted((a, b) -> Double.compare(calcScore(b), calcScore(a)))
+                .limit(5)
+                .collect(Collectors.toList());
+
+        // 3. 存入缓存
+        String jsonStr = JSONUtil.toJsonStr(top5);
+        redisUtil.set(hotArticleKey,jsonStr,60, TimeUnit.MINUTES);
+
+        return R.ok(top5);
+    }
+
+    /**
+     * 根据条件分页查询
+     * @param query
+     * @return
+     */
+    @Override
+    public R getArticleList(ArticleQueryDto query) {
+        LambdaQueryWrapper<Article> wrapper = new LambdaQueryWrapper<>();
+
+        wrapper.eq(StringUtils.isNotBlank(query.getCategory()),
+                Article::getCategory,
+                query.getCategory());
+
+        wrapper.eq(Article::getStatus,
+                ArticleStatusConstant.NORMAL);
+
+        wrapper.orderByDesc(Article::getCreateTime);
+
+        Page<Article> page = new Page<>(query.getPageNum(), query.getPageSize());
+        page(page,wrapper);
+
+        return R.ok(page);
+    }
+
+    /**
+     * 根据Category获取热门帖子
+     * @param articleQueryDto 查询条件
+     * @return 热门帖子
+     */
+    @Override
+    public R getHotArticleByCategory(ArticleQueryDto articleQueryDto) {
+        if (StringUtils.isBlank(articleQueryDto.getCategory())){
+            throw new RuntimeException("请添加查询参数");
+        }
+        String redisKey = "hotArticleByCategory:categoryId:" + categoryUtil.getCategoryId(articleQueryDto.getCategory());
+        // 从redis 中获取 key
+        Object cache = redisUtil.get(redisKey);
+        if(cache != null){
+            // JSON --> List
+            List<Article> list = JSONUtil.toList(cache.toString(), Article.class);
+            return R.ok(list);
+        }
+        // redis中没有值 从数据库中获取并且设置到redis
+        LambdaQueryWrapper<Article> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Article::getStatus,ArticleStatusConstant.NORMAL);
+        wrapper.eq(Article::getCategory,articleQueryDto.getCategory());
+        wrapper.orderByDesc(Article::getCreateTime);
+        Page<Article> page = new Page<>(articleQueryDto.getPageNum(), articleQueryDto.getPageSize());
+        page(page,wrapper);
+        List<Article> records = page.getRecords();
+        List<Article> list = records.stream()
+                .sorted((a, b) -> Double.compare(calcScore(a), calcScore(b)))
+                .limit(10)
+                .collect(Collectors.toList());
+
+        // 设置值到redis
+        redisUtil.set(redisKey,JSONUtil.toJsonStr(list),24,TimeUnit.HOURS);
+
+        return R.ok(list);
+    }
+
+
+    /**
+     * 文章分数计算  目前根据点赞和浏览量
+     * @param a
+     * @return
+     */
+    private double calcScore(Article a){
+        long hours = (System.currentTimeMillis() - a.getCreateTime().getTime()) / (1000 * 60 * 60);
+
+        double score = a.getViewCount() * 0.7 + a.getLikeCount() * 0.8;
+
+        return score / (hours + 2);
+    }
+
+
 }

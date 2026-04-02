@@ -18,6 +18,12 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
             this.setFieldValByName("status","0",metaObject);
         }
 
+        // 设置帖子是否为热门帖子 默认为0
+        Object isHot = getFieldValByName("isHot", metaObject);
+        if (isHot == null){
+            this.setFieldValByName("isHot","0",metaObject);
+        }
+
     }
 
     @Override
