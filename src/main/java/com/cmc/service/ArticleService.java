@@ -1,6 +1,7 @@
 package com.cmc.service;
 
 import com.cmc.common.R;
+import com.cmc.dto.query.ArticleFromEsQueryDto;
 import com.cmc.dto.query.ArticleQueryDto;
 import com.cmc.entity.Article;
 import com.baomidou.mybatisplus.extension.service.IService;
@@ -36,4 +37,6 @@ public interface ArticleService extends IService<Article> {
     R getArticleList(ArticleQueryDto articleQueryDto);
 
     R getHotArticleByCategory(ArticleQueryDto articleQueryDto);
+
+    R getArticleFromEs(ArticleFromEsQueryDto queryDto);
 }

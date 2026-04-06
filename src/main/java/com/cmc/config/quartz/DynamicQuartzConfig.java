@@ -3,6 +3,7 @@ package com.cmc.config.quartz;
 import com.cmc.common.QuartzJobConfig;
 import com.cmc.quartz.article.ScheduledPublishArticleJob;
 import com.cmc.quartz.es.ArticleTagSyncJob;
+import com.cmc.quartz.es.ArticleToEsSyncJob;
 import com.cmc.quartz.es.TestSyncJob;
 import org.quartz.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +26,8 @@ public class DynamicQuartzConfig {
         List<QuartzJobConfig> jobs = Arrays.asList(
                 new QuartzJobConfig("ArticleTagJob","es","0 0/30 * * * ?", ArticleTagSyncJob.class),
                 new QuartzJobConfig("test","test","0/30 * * * * ?", TestSyncJob.class),
-                new QuartzJobConfig("ScheduledPublishArticleJob","article","0 * * * * ?", ScheduledPublishArticleJob.class)
+                new QuartzJobConfig("ScheduledPublishArticleJob","article","0 * * * * ?", ScheduledPublishArticleJob.class),
+                new QuartzJobConfig("ArticleToEsSyncJob","es","0 * * * * ?", ArticleToEsSyncJob.class)
         );
         for (QuartzJobConfig jobConfig : jobs) {
             JobDetail jobDetail = JobBuilder.newJob(jobConfig.getJobClass())

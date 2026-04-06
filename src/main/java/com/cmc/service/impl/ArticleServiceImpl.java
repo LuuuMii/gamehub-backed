@@ -4,10 +4,12 @@ import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.cmc.common.PageResult;
 import com.cmc.common.R;
 import com.cmc.constans.article.article.ArticleStatusConstant;
 import com.cmc.constans.users.column.UserColumnStatusConstant;
 import com.cmc.constans.users.column.UserColumnTypeConstant;
+import com.cmc.dto.query.ArticleFromEsQueryDto;
 import com.cmc.dto.query.ArticleQueryDto;
 import com.cmc.entity.*;
 import com.cmc.mapper.*;
@@ -22,6 +24,18 @@ import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import org.apache.commons.lang.StringUtils;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.client.RequestOptions;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.MultiMatchQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
+import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
@@ -30,9 +44,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
 
+import java.io.IOException;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -75,6 +92,9 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
     @Autowired
     private CategoryUtil categoryUtil;
+
+    @Autowired
+    private RestHighLevelClient restHighLevelClient;
 
     @Override
     public R addDraftArticle(Article article) {
@@ -378,6 +398,93 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         redisUtil.set(redisKey,JSONUtil.toJsonStr(list),24,TimeUnit.HOURS);
 
         return R.ok(list);
+    }
+
+    /**
+     * 从ES中获取数据  条件查询
+     * @param queryDto 条件 带分页
+     * @return 数据
+     */
+    @Override
+    public R getArticleFromEs(ArticleFromEsQueryDto queryDto) {
+        SearchRequest request = new SearchRequest("article_index");
+        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+
+        // 1.构建查询条件
+        BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+        // 关键词搜索
+        if(queryDto.getKeyword() != null && !queryDto.getKeyword().isEmpty()){
+            MultiMatchQueryBuilder multiMatchQuery = QueryBuilders.multiMatchQuery(queryDto.getKeyword())
+                    .field("title",3.0f)
+                    .field("summary",2.0f);
+            boolQuery.must(multiMatchQuery);
+        }
+        // 时间过滤
+        if(queryDto.getPublishBeginTime() !=null && queryDto.getPublishEndTime() !=null){
+            boolQuery.filter(
+                    QueryBuilders.rangeQuery("createTime")
+                            .gte(queryDto.getPublishBeginTime())
+                            .lte(queryDto.getPublishEndTime())
+            );
+        }
+        sourceBuilder.query(boolQuery);
+
+        // 2.排序
+        if ("view".equals(queryDto.getOrder())){
+            sourceBuilder.sort("viewCount", SortOrder.DESC);
+        }else if("comment".equals(queryDto.getOrder())){
+            sourceBuilder.sort("commentCount", SortOrder.DESC);
+        }else if("time".equals(queryDto.getOrder())){
+            sourceBuilder.sort("createTime", SortOrder.DESC);
+        }
+
+        // 3.分页
+        sourceBuilder.from((queryDto.getPageNum() - 1) * queryDto.getPageSize());
+        sourceBuilder.size(queryDto.getPageSize());
+
+        // 4.高亮
+        HighlightBuilder highlightBuilder = new HighlightBuilder();
+        highlightBuilder.field("title");
+        highlightBuilder.field("summary");
+
+        highlightBuilder.preTags("<span style='color:red'>");
+        highlightBuilder.postTags("</span>");
+
+        sourceBuilder.highlighter(highlightBuilder);
+
+        request.source(sourceBuilder);
+
+        // 5.执行查询
+        SearchResponse response = null;
+        try {
+            response = restHighLevelClient.search(request, RequestOptions.DEFAULT);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        List<Map<String,Object>> result = new ArrayList<>();
+
+        for (SearchHit hit : response.getHits().getHits()) {
+            Map<String,Object> source = hit.getSourceAsMap();
+
+            // 处理高亮
+            Map<String, HighlightField> highlightFields = hit.getHighlightFields();
+            if (highlightFields.get("title") != null){
+                source.put("title",highlightFields.get("title").fragments()[0].string());
+            }
+            if(highlightFields.get("summary") != null){
+                source.put("summary",highlightFields.get("summary").fragments()[0].string());
+            }
+
+            result.add(source);
+        }
+
+        PageResult<Map<String,Object>> pageResult = new PageResult<>();
+        pageResult.setTotal(response.getHits().getTotalHits().value);
+        pageResult.setPageNum(queryDto.getPageNum());
+        pageResult.setPageSize(queryDto.getPageSize());
+        pageResult.setRecords(result);
+
+        return R.ok(pageResult);
     }
 
 

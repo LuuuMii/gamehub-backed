@@ -2,6 +2,7 @@ package com.cmc.controller;
 
 
 import com.cmc.common.R;
+import com.cmc.dto.query.ArticleFromEsQueryDto;
 import com.cmc.dto.query.ArticleQueryDto;
 import com.cmc.entity.Article;
 import com.cmc.service.ArticleService;
@@ -84,6 +85,17 @@ public class ArticleController {
     @PostMapping("/getHotArticleByCategory")
     public R getHotArticleByCategory(@RequestBody ArticleQueryDto articleQueryDto){
         return articleService.getHotArticleByCategory(articleQueryDto);
+    }
+
+
+    /**
+     * 从ES中获取数据  条件查询
+     * @param queryDto 条件 带分页
+     * @return 数据
+     */
+    @PostMapping("/getArticleFromEs")
+    public R getArticleFromEs(@RequestBody ArticleFromEsQueryDto queryDto){
+        return  articleService.getArticleFromEs(queryDto);
     }
 
     @GetMapping("/testRocketMQ/{msg}")
