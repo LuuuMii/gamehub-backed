@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cmc.mapper.UserSearchHistoryMapper">
+
+    <insert id="insertUserSearchHistoryOrUpdate">
+        INSERT INTO user_search_history
+        (user_id, keyword, search_time, source, device, ip, last_search_time, search_count, create_time, update_time)
+        VALUES
+            (
+                #{history.userId},
+                #{history.keyword},
+                NOW(),
+                #{history.source},
+                #{history.device},
+                #{history.ip},
+                NOW(),
+                1,
+                NOW(),
+                NOW()
+            )
+            ON DUPLICATE KEY UPDATE
+                                 search_count = search_count + 1,
+                                 last_search_time = NOW(),
+                                 update_time = NOW()
+    </insert>
+
+
+</mapper>
