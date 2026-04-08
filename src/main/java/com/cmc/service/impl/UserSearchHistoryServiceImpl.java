@@ -3,7 +3,9 @@ package com.cmc.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.cmc.common.R;
+import com.cmc.entity.SearchKeywordPool;
 import com.cmc.entity.UserSearchHistory;
+import com.cmc.mapper.SearchKeywordPoolMapper;
 import com.cmc.mapper.UserSearchHistoryMapper;
 import com.cmc.service.UserSearchHistoryService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -32,6 +34,8 @@ public class UserSearchHistoryServiceImpl extends ServiceImpl<UserSearchHistoryM
     @Autowired
     private UserSearchHistoryMapper userSearchHistoryMapper;
     @Autowired
+    private SearchKeywordPoolMapper searchKeywordPoolMapper;
+    @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
     private static final int MAX_HISTORY = 30;
@@ -46,6 +50,14 @@ public class UserSearchHistoryServiceImpl extends ServiceImpl<UserSearchHistoryM
         String redisKey = "search:history:user:" + userSearchHistory.getUserId();
         // 1. 写入mysql数据
         userSearchHistoryMapper.insertUserSearchHistoryOrUpdate(userSearchHistory);
+        // 添加记录到 搜索池中
+        SearchKeywordPool searchKeyword = new SearchKeywordPool();
+        searchKeyword.setSearchCount(1L)
+                        .setKeyword(userSearchHistory.getKeyword())
+                                .setClickCount(1L)
+                                        .setStatus(1)
+                                                .setSource("USER");
+        searchKeywordPoolMapper.insertSearchWordOrUpdate(searchKeyword);
 
         // 2. 写Redis  List结构
         stringRedisTemplate.opsForList().remove(redisKey,0,userSearchHistory.getKeyword());

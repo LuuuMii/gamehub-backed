@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cmc.mapper.SearchKeywordPoolMapper">
+
+    <insert id="insertSearchWordOrUpdate">
+        insert into search_keyword_pool(keyword,search_count,click_count,status,source,last_search_time,create_time,update_time)
+        values(#{keyword.keyword},#{keyword.searchCount},#{keyword.clickCount},#{keyword.status},#{keyword.source},NOW(),NOW(),NOW())
+        ON DUPLICATE KEY UPDATE
+            search_count = search_count + 1,
+            last_search_time = NOW()
+    </insert>
+
+</mapper>
