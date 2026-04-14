@@ -3,12 +3,12 @@ package com.cmc.utils;
 import com.aliyun.oss.*;
 import com.aliyun.oss.common.auth.*;
 import com.aliyun.oss.common.comm.SignVersion;
-import com.aliyun.oss.model.DeleteObjectsRequest;
-import com.aliyun.oss.model.DeleteObjectsResult;
-import com.aliyun.oss.model.PutObjectRequest;
-import com.aliyun.oss.model.PutObjectResult;
+import com.aliyun.oss.common.comm.io.BoundedInputStream;
+import com.aliyun.oss.model.*;
 import com.cmc.common.R;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,9 +26,7 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Component
 public class OssUtil {
@@ -47,6 +45,9 @@ public class OssUtil {
 
     @Value("${aliyun.oss.file.keySecret}")
     private String keySecret;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
 
     /**
      * 生成文件名称
@@ -252,4 +253,125 @@ public class OssUtil {
         HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
     }
 
+
+    /**
+     * 分片上传初始化   获取uploadId + 放重复名 ObjectName
+     * @param objectName 传入的文件名称
+     * @return R   uploadId objectName
+     */
+    public R initUpload(String objectName) {
+        DefaultCredentialProvider credentialsProvider = CredentialsProviderFactory.newDefaultCredentialProvider(keyId, keySecret);
+
+        ClientBuilderConfiguration clientBuilderConfiguration = new ClientBuilderConfiguration();
+        clientBuilderConfiguration.setSignatureVersion(SignVersion.V4);
+
+        OSS ossClient = OSSClientBuilder.create()
+                .endpoint(endpoint)
+                .credentialsProvider(credentialsProvider)
+                .clientConfiguration(clientBuilderConfiguration)
+                .region(region)
+                .build();
+        String newObjectName = generateFileName("video", objectName);
+
+        try{
+            InitiateMultipartUploadRequest request = new InitiateMultipartUploadRequest(bucketName, newObjectName);
+            InitiateMultipartUploadResult result = ossClient.initiateMultipartUpload(request);
+            Map<String,Object> dataMap = new HashMap<>();
+            dataMap.put("uploadId", result.getUploadId());
+            dataMap.put("objectName", newObjectName);
+            return R.ok(dataMap);
+        }finally {
+            ossClient.shutdown();
+        }
+
+    }
+
+    public R uploadChunk(MultipartFile file, String objectName, String uploadId, Integer partNumber,Integer totalChunks) {
+        DefaultCredentialProvider credentialsProvider = CredentialsProviderFactory.newDefaultCredentialProvider(keyId, keySecret);
+
+        ClientBuilderConfiguration clientBuilderConfiguration = new ClientBuilderConfiguration();
+        clientBuilderConfiguration.setSignatureVersion(SignVersion.V4);
+
+        OSS ossClient = OSSClientBuilder.create()
+                .endpoint(endpoint)
+                .credentialsProvider(credentialsProvider)
+                .clientConfiguration(clientBuilderConfiguration)
+                .region(region)
+                .build();
+
+        try{
+            UploadPartRequest request = new UploadPartRequest();
+            request.setBucketName(bucketName);
+            request.setKey(objectName);
+            request.setUploadId(uploadId);
+            request.setPartNumber(partNumber);
+            request.setPartSize(file.getSize());
+            request.setInputStream(file.getInputStream());
+            UploadPartResult result = ossClient.uploadPart(request);
+            String eTag = result.getETag();
+            // 记录已上传的分片  set类型
+            stringRedisTemplate.opsForSet().add("upload:" + uploadId + ":parts",partNumber.toString());
+            // 存入 etag
+            stringRedisTemplate.opsForHash().put("upload:" + uploadId,"etag_" + partNumber,eTag);
+            stringRedisTemplate.opsForHash().put("upload:" + uploadId,"totalChunks",totalChunks.toString());
+
+            return R.ok("success",eTag);
+
+        }catch (Exception e){
+            e.printStackTrace();
+            return R.error("分片上传失败");
+        } finally {
+            ossClient.shutdown();
+        }
+
+
+    }
+
+    public R completeUpload(String objectName, String uploadId) {
+        DefaultCredentialProvider credentialsProvider = CredentialsProviderFactory.newDefaultCredentialProvider(keyId, keySecret);
+
+        ClientBuilderConfiguration clientBuilderConfiguration = new ClientBuilderConfiguration();
+        clientBuilderConfiguration.setSignatureVersion(SignVersion.V4);
+
+        OSS ossClient = OSSClientBuilder.create()
+                .endpoint(endpoint)
+                .credentialsProvider(credentialsProvider)
+                .clientConfiguration(clientBuilderConfiguration)
+                .region(region)
+                .build();
+        String hashKey = "upload:" + uploadId;
+        String setKey = "upload:" + uploadId + ":parts";
+
+        try {
+            // 从redis中 取出所有的 parts
+            Integer totalChunks = Integer.valueOf(
+                    (String) Objects.requireNonNull(stringRedisTemplate.opsForHash().get(hashKey, "totalChunks"))
+            );
+            Long size = stringRedisTemplate.opsForSet().size(setKey);
+            List<PartETag> partETags = new ArrayList<>();
+            if (totalChunks != null && size != null && size == totalChunks.longValue()) {
+                // 相等时的逻辑
+                for (int i = 1; i<=totalChunks ; i++){
+                    String etag = (String)stringRedisTemplate.opsForHash().get(hashKey, "etag_" + i);
+                    partETags.add(new PartETag(i, etag));
+                }
+            }
+
+            partETags.sort(Comparator.comparingInt(PartETag::getPartNumber));
+
+            // 完成分片上传
+            CompleteMultipartUploadRequest request = new CompleteMultipartUploadRequest(bucketName, objectName, uploadId, partETags);
+
+            CompleteMultipartUploadResult result = ossClient.completeMultipartUpload(request);
+
+            return R.ok("success",result.getLocation());
+
+        }catch (Exception e){
+            e.printStackTrace();
+            return R.error("合并分片失败");
+        } finally {
+            ossClient.shutdown();
+        }
+
+    }
 }

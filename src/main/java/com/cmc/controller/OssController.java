@@ -85,4 +85,39 @@ public class OssController {
         return r;
     }
 
+
+    /**
+     * 分片上传初始化   获取uploadId + 放重复名 ObjectName
+     * @param objectName 传入的文件名称
+     * @return R   uploadId objectName
+     */
+    @PostMapping("/upload/init")
+    public R initUpload(@RequestParam("objectName") String objectName){
+        return ossUtil.initUpload(objectName);
+    }
+
+    /**
+     * 传入分片上传到OSS
+     * @param file 分片
+     * @param objectName 名称
+     * @param uploadId id
+     * @param partNumber 当前位置
+     * @param totalChunks 总数量
+     * @return R
+     */
+    @PostMapping("/upload/chunk")
+    public R uploadChunk(@RequestParam("file") MultipartFile file,
+                         @RequestParam("objectName") String objectName,
+                         @RequestParam("uploadId") String uploadId,
+                         @RequestParam("partNumber") Integer partNumber,
+                         @RequestParam("totalChunks") Integer totalChunks){
+        return ossUtil.uploadChunk(file,objectName,uploadId,partNumber,totalChunks);
+    }
+
+    @PostMapping("/upload/complete")
+    public R completeUpload(@RequestParam("objectName") String objectName,
+                            @RequestParam("uploadId") String uploadId){
+        return ossUtil.completeUpload(objectName,uploadId);
+    }
+
 }
