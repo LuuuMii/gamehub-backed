@@ -8,6 +8,7 @@ import com.cmc.quartz.es.SearchKeywordToEsSyncJob;
 import com.cmc.quartz.es.TestSyncJob;
 import org.quartz.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -19,18 +20,23 @@ import java.util.List;
 @Configuration
 public class DynamicQuartzConfig {
 
+    @Value("${project.es.enable}")
+    private boolean esEnable;
+
     @Autowired
     private Scheduler scheduler;
 
     @Bean
     public void scheduleJobs() throws SchedulerException {
         List<QuartzJobConfig> jobs = Arrays.asList(
-                new QuartzJobConfig("ArticleTagJob","es","0 0/30 * * * ?", ArticleTagSyncJob.class),
                 new QuartzJobConfig("test","test","0/30 * * * * ?", TestSyncJob.class),
-                new QuartzJobConfig("ScheduledPublishArticleJob","article","0 * * * * ?", ScheduledPublishArticleJob.class),
-                new QuartzJobConfig("ArticleToEsSyncJob","es","0 * * * * ?", ArticleToEsSyncJob.class),
-                new QuartzJobConfig("SearchKeywordToEsSyncJob","es","0 * * * * ?", SearchKeywordToEsSyncJob.class)
+                new QuartzJobConfig("ScheduledPublishArticleJob","article","0 * * * * ?", ScheduledPublishArticleJob.class)
         );
+        if (esEnable) {
+            jobs.add(new QuartzJobConfig("ArticleTagJob","es","0 0/30 * * * ?", ArticleTagSyncJob.class));
+            jobs.add(new QuartzJobConfig("ArticleToEsSyncJob","es","0 * * * * ?", ArticleToEsSyncJob.class));
+            jobs.add(new QuartzJobConfig("SearchKeywordToEsSyncJob","es","0 * * * * ?", SearchKeywordToEsSyncJob.class));
+        }
         for (QuartzJobConfig jobConfig : jobs) {
             JobDetail jobDetail = JobBuilder.newJob(jobConfig.getJobClass())
                     .withIdentity(jobConfig.getJobName(), jobConfig.getJobGroup())

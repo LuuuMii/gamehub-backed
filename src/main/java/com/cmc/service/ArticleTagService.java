@@ -18,6 +18,8 @@ public interface ArticleTagService extends IService<ArticleTag> {
 
     R getArticleTagByES(String keyword);
 
+    R getArticleTagByMysql(String keyword);
+
     R addArticleTagByUser(ArticleTag articleTag);
 
     R deleteUserArticleTag(ArticleTag articleTag);

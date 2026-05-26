@@ -9,6 +9,7 @@ import com.cmc.service.ArticleService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -24,6 +25,8 @@ import org.springframework.web.bind.annotation.*;
 @Api(tags = "文章操作接口")
 public class ArticleController {
 
+    @Value("${project.search.type}")
+    private String searchType;
     @Autowired
     private ArticleService articleService;
 
@@ -95,7 +98,11 @@ public class ArticleController {
      */
     @PostMapping("/getArticleFromEs")
     public R getArticleFromEs(@RequestBody ArticleFromEsQueryDto queryDto){
-        return  articleService.getArticleFromEs(queryDto);
+        if("es".equals(searchType)){
+            return  articleService.getArticleFromEs(queryDto);
+        }else{
+            return articleService.getArticleFromMysql(queryDto);
+        }
     }
 
     @GetMapping("/testRocketMQ/{msg}")

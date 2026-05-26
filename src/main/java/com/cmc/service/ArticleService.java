@@ -39,4 +39,6 @@ public interface ArticleService extends IService<Article> {
     R getHotArticleByCategory(ArticleQueryDto articleQueryDto);
 
     R getArticleFromEs(ArticleFromEsQueryDto queryDto);
+
+    R getArticleFromMysql(ArticleFromEsQueryDto queryDto);
 }

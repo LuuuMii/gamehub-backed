@@ -1,0 +1,8 @@
+project:
+  search:
+    type: es
+
+  mq:
+    enable: true
+  es:
+    enable: true

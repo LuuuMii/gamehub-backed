@@ -6,4 +6,61 @@
         update article set view_count = view_count + 1 where id = #{articleId}
     </update>
 
+    <select id="getArticleFromMysql" resultType="com.cmc.entity.Article">
+        select * from article
+        where 1 = 1
+        <!-- 时间范围查询 -->
+        <if test="dto.publishBeginTime != null">
+            AND publish_time <![CDATA[ >= ]]> #{dto.publishBeginTime}
+        </if>
+
+        <if test="dto.publishEndTime != null">
+            AND publish_time <![CDATA[ <= ]]> #{dto.publishEndTime}
+        </if>
+
+        <!-- 关键词搜索 -->
+        <if test="dto.keyword != null and dto.keyword != ''">
+            AND title LIKE CONCAT('%', #{dto.keyword}, '%')
+        </if>
+
+        ORDER BY
+        <choose>
+            <when test="dto.order == 'view'">
+                view_count DESC
+            </when>
+
+            <when test="dto.order == 'comment'">
+                comment_count DESC
+            </when>
+
+            <when test="dto.order == 'time'">
+                create_time DESC
+            </when>
+
+            <otherwise>
+                create_time DESC
+            </otherwise>
+        </choose>
+
+        LIMIT #{dto.offset},#{dto.pageSize}
+    </select>
+
+    <select id="countArticleFromMysql" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM article
+        WHERE 1 = 1
+
+        <if test="dto.publishBeginTime != null">
+            AND publish_time <![CDATA[ >= ]]> #{dto.publishBeginTime}
+        </if>
+
+        <if test="dto.publishEndTime != null">
+            AND publish_time <![CDATA[ <= ]]> #{dto.publishEndTime}
+        </if>
+
+        <if test="dto.keyword != null and dto.keyword != ''">
+            AND title LIKE CONCAT('%', #{dto.keyword}, '%')
+        </if>
+    </select>
+
 </mapper>

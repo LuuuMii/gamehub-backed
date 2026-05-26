@@ -15,12 +15,17 @@ import org.elasticsearch.xcontent.XContentType;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.quartz.QuartzJobBean;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 @Component
+@ConditionalOnProperty(
+        name = "project.es.enable",
+        havingValue = "true"
+)
 public class ArticleToEsSyncJob extends QuartzJobBean {
 
     @Autowired

@@ -1,0 +1,8 @@
+project:
+  search:
+    type: mysql
+
+  mq:
+    enable: false
+  es:
+    enable: false

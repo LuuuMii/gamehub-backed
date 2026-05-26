@@ -15,6 +15,7 @@ import org.elasticsearch.client.indices.GetIndexRequest;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.quartz.QuartzJobBean;
 import org.springframework.stereotype.Component;
 
@@ -24,6 +25,10 @@ import java.util.List;
 import java.util.Map;
 
 @Component
+@ConditionalOnProperty(
+        name = "project.es.enable",
+        havingValue = "true"
+)
 public class ArticleTagSyncJob extends QuartzJobBean {
 
     @Autowired

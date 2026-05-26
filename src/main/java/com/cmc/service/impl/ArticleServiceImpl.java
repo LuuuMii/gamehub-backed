@@ -20,6 +20,7 @@ import com.cmc.utils.article.CategoryUtil;
 import com.cmc.vo.ArticlePageDetailsVO;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
 import org.apache.commons.lang.StringUtils;
@@ -485,6 +486,45 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         pageResult.setRecords(result);
 
         return R.ok(pageResult);
+    }
+
+    @Override
+    public R getArticleFromMysql(ArticleFromEsQueryDto queryDto) {
+        String keyword = queryDto.getKeyword();
+        queryDto.setOffset(queryDto.getPageNum() - 1);
+        List<Article> articleList = articleMapper.getArticleFromMysql(queryDto);
+        int totalCount = articleMapper.countArticleFromMysql(queryDto);
+
+        List<Map<String,Object>> result = new ArrayList<>();
+
+        for (Article article : articleList) {
+            if (keyword != null && !keyword.isEmpty()
+                    && article.getTitle() != null) {
+
+                String title = article.getTitle();
+
+                title = title.replace(
+                        keyword,
+                        "<span style='color:red'>" + keyword + "</span>"
+                );
+
+                article.setTitle(title);
+            }
+            ObjectMapper objectMapper = new ObjectMapper();
+
+            Map<String, Object> map = objectMapper.convertValue(article, Map.class);
+            result.add(map);
+        }
+
+
+        PageResult<Map<String,Object>> pageResult = new PageResult<>();
+        pageResult.setTotal(totalCount);
+        pageResult.setPageNum(queryDto.getPageNum());
+        pageResult.setPageSize(queryDto.getPageSize());
+        pageResult.setRecords(result);
+
+        return R.ok(pageResult);
+
     }
 
 

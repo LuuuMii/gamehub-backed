@@ -8,6 +8,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -25,6 +26,8 @@ public class ArticleTagController {
 
     @Autowired
     private ArticleTagService articleTagService;
+    @Value("${project.search.type}")
+    private String searchType;
 
     @GetMapping("/getAllArticleTag")
     public R getAllArticleTag(){
@@ -33,7 +36,12 @@ public class ArticleTagController {
 
     @GetMapping("/getArticleTagByES")
     public R getArticleTagByES(@RequestParam("keyword") String keyword){
-        return articleTagService.getArticleTagByES(keyword);
+        if("es".equals(searchType)){
+            return articleTagService.getArticleTagByES(keyword);
+        }else{
+            return articleTagService.getArticleTagByMysql(keyword);
+        }
+
     }
 
 

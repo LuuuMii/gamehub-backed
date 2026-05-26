@@ -12,6 +12,7 @@ import com.cmc.mapper.UserLikeRecordMapper;
 import com.cmc.rocketmq.message.LikeMessage;
 import com.cmc.service.UserLikeRecordService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.cmc.service.like.LikeMassageService;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,6 +42,8 @@ public class UserLikeRecordServiceImpl extends ServiceImpl<UserLikeRecordMapper,
     private RocketMQTemplate rocketMQTemplate;
     @Autowired
     private RedisTemplate<String,Object> redisTemplate;
+    @Autowired
+    private LikeMassageService likeMassageService;
 
     @Override
     public R syncLikeRecord(UserLikeRecord userLikeRecord, Long userId, Long targetId, String targetType) {
@@ -116,31 +119,33 @@ public class UserLikeRecordServiceImpl extends ServiceImpl<UserLikeRecordMapper,
 
         Boolean liked = redisTemplate.opsForSet().isMember(userKey, userId);
 
-        if (Boolean.TRUE.equals(liked)) {
-            //去掉点赞
-            redisTemplate.opsForSet().remove(userKey,userId);
-            redisTemplate.opsForValue().decrement(countKey);
+        return likeMassageService.insertLikeRecord(liked,userLikeRecord,userId,targetId,targetType);
 
-            // 发送消息
-            rocketMQTemplate.convertAndSend(
-                    "article-like-topic",
-                    new LikeMessage(targetId,targetType,userId,"UNLIKE")
-            );
-
-            return R.ok("取消点赞");
-
-        }else{
-            //点赞
-            redisTemplate.opsForSet().add(userKey,userId);
-            redisTemplate.opsForValue().increment(countKey);
-
-            rocketMQTemplate.convertAndSend(
-                    "article-like-topic",
-                    new LikeMessage(targetId,targetType,userId,"LIKE")
-            );
-
-            return R.ok("点赞");
-        }
+//        if (Boolean.TRUE.equals(liked)) {
+//            //去掉点赞
+//            redisTemplate.opsForSet().remove(userKey,userId);
+//            redisTemplate.opsForValue().decrement(countKey);
+//
+//            // 发送消息
+//            rocketMQTemplate.convertAndSend(
+//                    "article-like-topic",
+//                    new LikeMessage(targetId,targetType,userId,"UNLIKE")
+//            );
+//
+//            return R.ok("取消点赞");
+//
+//        }else{
+//            //点赞
+//            redisTemplate.opsForSet().add(userKey,userId);
+//            redisTemplate.opsForValue().increment(countKey);
+//
+//            rocketMQTemplate.convertAndSend(
+//                    "article-like-topic",
+//                    new LikeMessage(targetId,targetType,userId,"LIKE")
+//            );
+//
+//            return R.ok("点赞");
+//        }
 
     }
 

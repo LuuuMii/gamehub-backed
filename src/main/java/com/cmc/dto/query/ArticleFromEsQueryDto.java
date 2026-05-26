@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 public class ArticleFromEsQueryDto {
 
     private int pageNum;
+    private int offset;
     private int pageSize;
     private String keyword;
     private String type;

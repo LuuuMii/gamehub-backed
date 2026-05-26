@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -76,6 +77,23 @@ public class ArticleTagServiceImpl extends ServiceImpl<ArticleTagMapper, Article
             throw new RuntimeException(e);
         }
 
+
+        return R.ok(results);
+    }
+
+    @Override
+    public R getArticleTagByMysql(String keyword) {
+        List<Map<String,Object>> results = new ArrayList<>();
+
+        List<ArticleTag> list  = articleTagMapper.searchByKeyword(keyword);
+
+        for (ArticleTag articleTag : list) {
+            Map<String,Object> map = new HashMap<>();
+            map.put("id",articleTag.getId());
+            map.put("name",articleTag.getName());
+            map.put("description",articleTag.getDescription());
+            results.add(map);
+        }
 
         return R.ok(results);
     }
