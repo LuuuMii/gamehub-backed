@@ -6,11 +6,14 @@ import com.aliyun.oss.common.comm.SignVersion;
 import com.aliyun.oss.common.comm.io.BoundedInputStream;
 import com.aliyun.oss.model.*;
 import com.cmc.common.R;
+import com.cmc.service.UploadTaskMultipartService;
+import com.cmc.vo.UploadChunkVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -27,8 +30,10 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @Component
+@Transactional
 public class OssUtil {
 
     @Value("${aliyun.oss.file.endpoint}")
@@ -48,6 +53,9 @@ public class OssUtil {
 
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
+
+    @Autowired
+    private UploadTaskMultipartService uploadTaskMultipartService;
 
     /**
      * 生成文件名称
@@ -260,6 +268,8 @@ public class OssUtil {
      * @return R   uploadId objectName
      */
     public R initUpload(String objectName) {
+
+
         DefaultCredentialProvider credentialsProvider = CredentialsProviderFactory.newDefaultCredentialProvider(keyId, keySecret);
 
         ClientBuilderConfiguration clientBuilderConfiguration = new ClientBuilderConfiguration();
@@ -300,6 +310,10 @@ public class OssUtil {
                 .build();
 
         try{
+
+            String partKey = "upload:" + uploadId + ":parts";
+            String uploadKey = "upload:" + uploadId;
+
             UploadPartRequest request = new UploadPartRequest();
             request.setBucketName(bucketName);
             request.setKey(objectName);
@@ -310,12 +324,25 @@ public class OssUtil {
             UploadPartResult result = ossClient.uploadPart(request);
             String eTag = result.getETag();
             // 记录已上传的分片  set类型
-            stringRedisTemplate.opsForSet().add("upload:" + uploadId + ":parts",partNumber.toString());
+            stringRedisTemplate.opsForSet().add(partKey,partNumber.toString());
             // 存入 etag
-            stringRedisTemplate.opsForHash().put("upload:" + uploadId,"etag_" + partNumber,eTag);
-            stringRedisTemplate.opsForHash().put("upload:" + uploadId,"totalChunks",totalChunks.toString());
+            stringRedisTemplate.opsForHash().put(uploadKey,"etag_" + partNumber,eTag);
+            stringRedisTemplate.opsForHash().put(uploadKey,"totalChunks",totalChunks.toString());
 
-            return R.ok("success",eTag);
+            //设置过期时间
+            stringRedisTemplate.expire(partKey,24, TimeUnit.HOURS);
+            stringRedisTemplate.expire(uploadKey,24, TimeUnit.HOURS);
+
+
+            UploadChunkVO vo = new UploadChunkVO();
+            vo.setETag(eTag);
+            vo.setUploadChunks(Math.toIntExact(stringRedisTemplate.opsForSet().size(partKey)));
+            vo.setTotalChunks(totalChunks);
+            vo.setObjectName(objectName);
+            vo.setUploadId(uploadId);
+
+
+            return R.ok("success",vo);
 
         }catch (Exception e){
             e.printStackTrace();

@@ -236,4 +236,16 @@ public class UsersServiceImpl extends ServiceImpl<UsersMapper, Users> implements
         }
         return R.error("logout failed");
     }
+
+    // 判断当前用户是否已经登录过
+    @Override
+    public R isLogin(Long userId) {
+
+        boolean login = StpUtil.isLogin(userId);
+        if (login) {
+            return R.ok("login success");
+        }
+
+        return R.error("login failed");
+    }
 }

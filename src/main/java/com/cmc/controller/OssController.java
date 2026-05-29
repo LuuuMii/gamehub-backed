@@ -2,6 +2,8 @@ package com.cmc.controller;
 
 import com.cmc.common.R;
 import com.cmc.dto.ImageDTO;
+import com.cmc.service.OssService;
+import com.cmc.service.UploadTaskMultipartService;
 import com.cmc.utils.OssUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +20,9 @@ public class OssController {
 
     @Autowired
     private OssUtil ossUtil;
+
+    @Autowired
+    private OssService ossService;
 
     @PostMapping("/uploadAvatar")
     public R uploadAvatar(@RequestParam("file") MultipartFile file) {
@@ -93,7 +98,8 @@ public class OssController {
      */
     @PostMapping("/upload/init")
     public R initUpload(@RequestParam("objectName") String objectName){
-        return ossUtil.initUpload(objectName);
+//        return ossUtil.initUpload(objectName);
+        return ossService.initUpload(objectName);
     }
 
     /**
@@ -111,13 +117,21 @@ public class OssController {
                          @RequestParam("uploadId") String uploadId,
                          @RequestParam("partNumber") Integer partNumber,
                          @RequestParam("totalChunks") Integer totalChunks){
-        return ossUtil.uploadChunk(file,objectName,uploadId,partNumber,totalChunks);
+//        return ossUtil.uploadChunk(file,objectName,uploadId,partNumber,totalChunks);
+        return ossService.uploadChunk(file,objectName,uploadId,partNumber,totalChunks);
     }
 
+    /**
+     * 合并分片
+     * @param objectName 文件地址
+     * @param uploadId 分片任务ID
+     * @return R
+     */
     @PostMapping("/upload/complete")
     public R completeUpload(@RequestParam("objectName") String objectName,
                             @RequestParam("uploadId") String uploadId){
-        return ossUtil.completeUpload(objectName,uploadId);
+//        return ossUtil.completeUpload(objectName,uploadId);
+        return ossService.completeUpload(objectName,uploadId);
     }
 
 }

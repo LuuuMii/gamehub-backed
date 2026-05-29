@@ -46,6 +46,11 @@ public class UsersController {
         return usersService.logout(request);
     }
 
+    @PostMapping("/isLogin")
+    public R isLogin(Long userId){
+        return usersService.isLogin(userId);
+    }
+
     @GetMapping("/getUserInfoById/{id}")
     public R getUserInfoById(@PathVariable String id){
         return usersService.getUserInfoById(Long.valueOf(id));

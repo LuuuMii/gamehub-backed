@@ -30,4 +30,6 @@ public interface UsersService extends IService<Users> {
     R getAuthorDataForArticlePage(String username);
 
     R logout(HttpServletRequest request);
+
+    R isLogin(Long userId);
 }
