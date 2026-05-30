@@ -11,4 +11,5 @@ public interface OssService {
 
     public R completeUpload(String objectName, String uploadId);
 
+    R listParts(String objectName, String uploadId);
 }

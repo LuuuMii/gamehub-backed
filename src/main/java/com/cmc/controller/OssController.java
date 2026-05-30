@@ -134,4 +134,10 @@ public class OssController {
         return ossService.completeUpload(objectName,uploadId);
     }
 
+    @PostMapping("/upload/listParts")
+    public R listParts(@RequestParam("objectName") String objectName,
+                       @RequestParam("uploadId") String uploadId){
+        return ossService.listParts(objectName,uploadId);
+    }
+
 }

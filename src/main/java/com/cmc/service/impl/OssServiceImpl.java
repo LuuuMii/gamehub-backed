@@ -1,5 +1,6 @@
 package com.cmc.service.impl;
 
+import com.aliyun.oss.model.PartSummary;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.cmc.common.R;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -86,5 +88,12 @@ public class OssServiceImpl implements OssService {
         uploadTaskMultipartMapper.updateById(task);
 
         return r;
+    }
+
+
+    @Override
+    public R listParts(String objectName, String uploadId) {
+        List<PartSummary> parts = ossUtil.listParts(objectName, uploadId);
+        return R.ok(parts);
     }
 }

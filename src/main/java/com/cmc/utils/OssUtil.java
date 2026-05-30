@@ -391,6 +391,7 @@ public class OssUtil {
 
             CompleteMultipartUploadResult result = ossClient.completeMultipartUpload(request);
 
+
             return R.ok("success",result.getLocation());
 
         }catch (Exception e){
@@ -399,6 +400,36 @@ public class OssUtil {
         } finally {
             ossClient.shutdown();
         }
+
+    }
+
+    public List<PartSummary> listParts(String objectName, String uploadId){
+
+        OSS ossClient = getOssClient();
+
+        try{
+            ListPartsRequest request = new ListPartsRequest(bucketName, objectName, uploadId);
+
+            PartListing partListing = ossClient.listParts(request);
+
+            return partListing.getParts();
+        }finally{
+            ossClient.shutdown();
+        }
+    }
+
+    private OSS getOssClient(){
+        DefaultCredentialProvider credentialsProvider = CredentialsProviderFactory.newDefaultCredentialProvider(keyId, keySecret);
+
+        ClientBuilderConfiguration clientBuilderConfiguration = new ClientBuilderConfiguration();
+        clientBuilderConfiguration.setSignatureVersion(SignVersion.V4);
+
+        return OSSClientBuilder.create()
+                .endpoint(endpoint)
+                .credentialsProvider(credentialsProvider)
+                .clientConfiguration(clientBuilderConfiguration)
+                .region(region)
+                .build();
 
     }
 }
