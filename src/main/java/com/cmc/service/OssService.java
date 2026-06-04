@@ -1,6 +1,7 @@
 package com.cmc.service;
 
 import com.cmc.common.R;
+import com.cmc.enums.file.FileCategory;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface OssService {
@@ -12,4 +13,6 @@ public interface OssService {
     public R completeUpload(String objectName, String uploadId);
 
     R listParts(String objectName, String uploadId);
+
+    R uploadFile(MultipartFile file, FileCategory fileCategory);
 }

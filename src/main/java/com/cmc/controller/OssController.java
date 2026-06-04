@@ -2,6 +2,7 @@ package com.cmc.controller;
 
 import com.cmc.common.R;
 import com.cmc.dto.ImageDTO;
+import com.cmc.enums.file.FileCategory;
 import com.cmc.service.OssService;
 import com.cmc.service.UploadTaskMultipartService;
 import com.cmc.utils.OssUtil;
@@ -134,10 +135,29 @@ public class OssController {
         return ossService.completeUpload(objectName,uploadId);
     }
 
+    /**
+     * 查询分片
+     * @param objectName  OSS文件名称
+     * @param uploadId 上传ID
+     * @return R
+     */
     @PostMapping("/upload/listParts")
     public R listParts(@RequestParam("objectName") String objectName,
                        @RequestParam("uploadId") String uploadId){
         return ossService.listParts(objectName,uploadId);
+    }
+
+
+    /**
+     *
+     * @param file 上传文件
+     * @param fileCategory  文件分类(区分OSS文件夹)
+     * @return
+     */
+    @PostMapping("/upload/file")
+    public R uploadFile(@RequestParam("file") MultipartFile file,
+                        @RequestParam("fileCategory") FileCategory fileCategory){
+        return ossService.uploadFile(file,fileCategory);
     }
 
 }
